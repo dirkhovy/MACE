@@ -1,4 +1,4 @@
-#MACE (Multi-Annotator Competence Estimation)
+# MACE (Multi-Annotator Competence Estimation)
 
 When evaluating redundant annotations (like those from Amazon's MechanicalTurk), we usually want to 
 1. aggregate annotations to recover the most likely answer
