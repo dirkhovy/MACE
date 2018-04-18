@@ -1,0 +1,4 @@
+2015-06-08.19-27-28.Lowlands.local ls
+2015-06-08.19-27-33.Lowlands.local rm MACE.java 
+2015-06-08.19-27-53.Lowlands.local ln ../../../../src/edu/isi/MACE.java
+2015-06-08.19-27-54.Lowlands.local ls
