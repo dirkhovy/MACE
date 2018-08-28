@@ -8,7 +8,7 @@ When evaluating redundant annotations (like those from Amazon's MechanicalTurk),
 MACE solves all of these problems, by learning competence estimates for each annotators and computing the most likely answer based on those competences.
 
 
-## Usage
+## 1 Usage
 
 (lines starting with '$' denote command line input)
 
@@ -25,7 +25,7 @@ If you have trouble running the shell script, you might want to modify the scrip
 MACE runs Variational Bayes EM training by default. If you would like vanilla EM training, set --em 
 
 
-## Options:
+### Options:
 ```
 	--controls <FILE>:	supply a file with annotated control items. Each line corresponds to one item,
 				so the number of lines MUST match the input CSV file.
@@ -62,7 +62,7 @@ MACE runs Variational Bayes EM training by default. If you would like vanilla EM
 				This improves accuracy at the expense of coverage. Default: 1.0
 ```
 
-## Inputs
+## 2 Inputs
 
 ### Input File
 The **input file** has to be a comma-separated file, where each line represents an item, and each column represents an annotator. Since version 0.3, MACE can also handle blank lines, as you might have when annotating sequential data (each word on one line, sentences separated by a blank line).
@@ -132,7 +132,7 @@ NOUN
 ```
 
 
-## Outputs
+## 3 Outputs
 
 MACE provides two standard output files:
 * the most likely answer **prediction** for each item, `[prefix.]prediction`. This file has the same number of lines as the input file. Each line is the most likely answer value for the corresponding item. If you set --distribution, each line contains the distribution over answer values sorted by entropy. In the POS example from above, these files would look like this:
@@ -167,7 +167,7 @@ NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 
 ```
 
 
-## Examples
+## 4 Examples
 
 `$java -jar MACE.jar example.csv`
 Evaluate the file example.csv and write the output to "competence" and "prediction".
@@ -192,7 +192,7 @@ Write the output to "competence" and "prediction". The latter will have blank li
 Compute the accuracy of only the predicted items and write to STDOUT.
 
 
-# References
+## 5 References
 
 To cite MACE in publications, please refer to:
 * *Dirk Hovy, Taylor Berg-Kirkpatrick, Ashish Vaswani, and Eduard Hovy* (2013): **Learning Whom to Trust With MACE**. In: Proceedings of NAACL-HLT. [PDF](http://www.aclweb.org/anthology/N13-1132)
