@@ -70,6 +70,7 @@ The **input file** has to be a comma-separated file, where each line represents 
 Missing annotations by an annotator on an item are represented by the empty string. Files should be formatted in UTF-8 to avoid problems with newline characters.
 	
 Examples:
+
 1.: File with binary decisions:
 ```
 0,1,,,,1,0,0
@@ -118,7 +119,7 @@ PRON
 
 
 ### Test File
-If we know *all* answers and only want to get an accuray for MACE, we can supply a **test file** via ``--test test.txt`. This file must have the same number of lines as the input file. MACE will output an accuracy score. This will not work when `--distribution` is set!
+If we know *all* answers and only want to get an accuray for MACE, we can supply a **test file** via `--test test.txt`. This file must have the same number of lines as the input file. MACE will output an accuracy score. This will not work when `--distribution` is set!
 
 Example:
 ```
