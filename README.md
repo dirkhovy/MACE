@@ -82,7 +82,7 @@ Missing annotations by an annotator on an item are represented by the empty stri
 	VERB,VERB,,VERB,
 
 	ADJ,,ADJ,,ADV
-	,,VERB,,VERB,ADV
+	,VERB,,VERB,ADV
 	NOUN,,,NOUN,PRON
 	
 
@@ -92,10 +92,36 @@ Make sure the last line has a line break!
 ## Output
 
 MACE provides two standard output files:
-* the most likely answer for each item, [prefix.]prediction. This file has the same number of lines as the input file. Each line is the most likely answer value for the corresponding item. If you set --distribution, each line contains the distribution over answer values sorted by entropy.
-* the competence estimate for each annotator, [prefix.]competence. This file has one line with tab separated values.
+* the most likely answer for each item, [prefix.]prediction. This file has the same number of lines as the input file. Each line is the most likely answer value for the corresponding item. If you set --distribution, each line contains the distribution over answer values sorted by entropy. In the POS example from above, these files would look like this:
+```
+NOUN
+VERB
+
+ADJ
+VERB
+NOUN
+```
+    or
+```
+NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 6.140428479093134E-5	ADV 6.140428479093134E-5
+VERB 0.9999961943848287	NOUN 9.514037928812883E-7	ADJ 9.514037928812883E-7	PRON 9.514037928812883E-7	ADV 9.514037928812883E-7
+
+ADJ 0.9990184050335877	ADV 2.741982824057974E-4	NOUN 2.3579889466878394E-4	VERB 2.3579889466878394E-4	PRON 2.3579889466878394E-4
+VERB 0.9994950838119411	ADV 1.4104305366466138E-4	NOUN 1.2129104479807625E-4	ADJ 1.2129104479807625E-4	PRON 1.2129104479807625E-4
+NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 6.140428479093134E-5	ADV 6.140428479093134E-5
+```
+* the competence estimate for each annotator, [prefix.]competence. This file has one line with tab separated values. In the POS example from above, this would be
+ `0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738`
 	
-In addition, you can output the entropy of each item by setting --entropies. This will output a file with the same number of lines as the input file, named '[prefix.]entropy'
+* In addition, you can output the entropy of each item by setting --entropies. This will output a file with the same number of lines as the input file, named '[prefix.]entropy'. The output looks like this:
+```
+0.0027237895900081095
+5.657170773284981E-5
+
+0.009138546784668605
+0.005036498835041038
+0.0027237895900081095
+```
 
 
 ## Examples
