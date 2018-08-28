@@ -111,7 +111,7 @@ VERB 0.9994950838119411	ADV 1.4104305366466138E-4	NOUN 1.2129104479807625E-4	ADJ
 NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 6.140428479093134E-5	ADV 6.140428479093134E-5
 ```
 * the competence estimate for each annotator, [prefix.]competence. This file has one line with tab separated values. In the POS example from above, this would be
- ```0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738```
+```0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738```
 
 * In addition, you can output the entropy of each item by setting --entropies. This will output a file with the same number of lines as the input file, named '[prefix.]entropy'. The output looks like this:
 ```
