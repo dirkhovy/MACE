@@ -111,8 +111,8 @@ VERB 0.9994950838119411	ADV 1.4104305366466138E-4	NOUN 1.2129104479807625E-4	ADJ
 NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 6.140428479093134E-5	ADV 6.140428479093134E-5
 ```
 * the competence estimate for each annotator, [prefix.]competence. This file has one line with tab separated values. In the POS example from above, this would be
- `0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738`
-	
+ ```0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738```
+
 * In addition, you can output the entropy of each item by setting --entropies. This will output a file with the same number of lines as the input file, named '[prefix.]entropy'. The output looks like this:
 ```
 0.0027237895900081095
@@ -152,7 +152,7 @@ Compute the accuracy of only the predicted items and write to STDOUT.
 # References
 
 To cite MACE in publications, please refer to:
-*Dirk Hovy, Taylor Berg-Kirkpatrick, Ashish Vaswani and Eduard Hovy* (2013): **Learning Whom to Trust With MACE**. In: Proceedings of NAACL-HLT.
+* *Dirk Hovy, Taylor Berg-Kirkpatrick, Ashish Vaswani, and Eduard Hovy* (2013): **Learning Whom to Trust With MACE**. In: Proceedings of NAACL-HLT. [PDF](http://www.aclweb.org/anthology/N13-1132)
 
 ```bib
 @inproceedings{hovy2013learning,
@@ -164,3 +164,6 @@ To cite MACE in publications, please refer to:
 }
 
 ```
+
+There is an additional paper that compares MACE with some other models:
+* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL).
