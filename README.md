@@ -62,37 +62,79 @@ MACE runs Variational Bayes EM training by default. If you would like vanilla EM
 				This improves accuracy at the expense of coverage. Default: 1.0
 ```
 
-## Input
+## Inputs
 
-The input file has to be a comma-separated file, where each line represents an item, and each column represents an annotator. Since version 0.3, MACE can also handle blank lines, as you might have when annotating sequential data (each word on one line, sentences separated by a blank line).
+### Input File
+The **input file** has to be a comma-separated file, where each line represents an item, and each column represents an annotator. Since version 0.3, MACE can also handle blank lines, as you might have when annotating sequential data (each word on one line, sentences separated by a blank line).
 
 Missing annotations by an annotator on an item are represented by the empty string. Files should be formatted in UTF-8 to avoid problems with newline characters.
 	
-### Examples:
+Examples:
 1.: File with binary decisions:
-
-	0,1,,,,1,0,0
-	,,1,1,,0,0,1
-	1,0,0,1,,1,,0
-
+```
+0,1,,,,1,0,0
+,,1,1,,0,0,1
+1,0,0,1,,1,,0
+```
 
 2.: File with sequential POS annotations:
+```
+NOUN,,,NOUN,PRON
+VERB,VERB,,VERB,
 
-	NOUN,,,NOUN,PRON
-	VERB,VERB,,VERB,
-
-	ADJ,,ADJ,,ADV
-	,VERB,,VERB,ADV
-	NOUN,,,NOUN,PRON
-	
+ADJ,,ADJ,,ADV
+,VERB,,VERB,ADV
+NOUN,,,NOUN,PRON
+```	
 
 Make sure the last line has a line break!
 
 
-## Output
+### Label Priors
+The **prior** file is optional, and gives the a priori prevalence of the individual labels. We can supply this to MACE with `--priors priors.tsv` if we know the prior distribution, and it will take them into account. The file needs to list all labels (one per line) and tab-separated the weight, probability, or frequency (MACE automatically normalizes these).
+
+Example:
+```
+NOUN	30
+VERB	30
+ADJ	20
+ADV	10
+PRON	10
+```
+
+### Control Items
+If we know the correct answer for some items, we can include **control items**. This helps MACE assess annotator reliability. The file with control items needs to have the same number of lines as the input file, with the correct specified for the control items.
+
+Example:
+```
+PRON
+
+
+
+
+
+
+```
+
+
+### Test File
+If we know *all* answers and only want to get an accuray for MACE, we can supply a **test file** via ``--test test.txt`. This file must have the same number of lines as the input file. MACE will output an accuracy score. This will not work when `--distribution` is set!
+
+Example:
+```
+PRON
+VERB
+
+ADJ
+VERB
+NOUN
+```
+
+
+## Outputs
 
 MACE provides two standard output files:
-* the most likely answer for each item, [prefix.]prediction. This file has the same number of lines as the input file. Each line is the most likely answer value for the corresponding item. If you set --distribution, each line contains the distribution over answer values sorted by entropy. In the POS example from above, these files would look like this:
+* the most likely answer **prediction** for each item, `[prefix.]prediction`. This file has the same number of lines as the input file. Each line is the most likely answer value for the corresponding item. If you set --distribution, each line contains the distribution over answer values sorted by entropy. In the POS example from above, these files would look like this:
 ```
 NOUN
 VERB
@@ -110,10 +152,10 @@ ADJ 0.9990184050335877	ADV 2.741982824057974E-4	NOUN 2.3579889466878394E-4	VERB 
 VERB 0.9994950838119411	ADV 1.4104305366466138E-4	NOUN 1.2129104479807625E-4	ADJ 1.2129104479807625E-4	PRON 1.2129104479807625E-4
 NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 6.140428479093134E-5	ADV 6.140428479093134E-5
 ```
-* the competence estimate for each annotator, [prefix.]competence. This file has one line with tab separated values. In the POS example from above, this would be
+* the **competence estimate** for each annotator, `[prefix.]competence`. This file has one line with tab separated values. In the POS example from above, this would be
 ```0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738```
 
-* In addition, you can output the entropy of each item by setting --entropies. This will output a file with the same number of lines as the input file, named '[prefix.]entropy'. The output looks like this:
+* In addition, you can output the entropy of each item by setting `--entropies`. This will output a file with the same number of lines as the input file, named `[prefix.]entropy`. The output looks like this:
 ```
 0.0027237895900081095
 5.657170773284981E-5
