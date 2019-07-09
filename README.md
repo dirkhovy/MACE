@@ -203,7 +203,7 @@ Compute the accuracy of only the predicted items and write to STDOUT.
 ## 5 References
 
 To cite MACE in publications, please refer to:
-* *Dirk Hovy, Taylor Berg-Kirkpatrick, Ashish Vaswani, and Eduard Hovy* (2013): **Learning Whom to Trust With MACE**. In: Proceedings of NAACL-HLT. [PDF](http://www.aclweb.org/anthology/N13-1132)
+* *Dirk Hovy, Taylor Berg-Kirkpatrick, Ashish Vaswani, and Eduard Hovy* (2013): **Learning Whom to Trust With MACE**. In: Proceedings of NAACL-HLT. [[PDF]](http://www.aclweb.org/anthology/N13-1132)
 
 ```bib
 @inproceedings{hovy2013learning,
@@ -217,4 +217,17 @@ To cite MACE in publications, please refer to:
 ```
 
 There is an additional paper that compares MACE with some other models:
-* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL).
+* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL). [[PDF]](http://www.dirkhovy.com/portfolio/papers/download/bma_draft.pdf)
+
+```bib
+@article{paun2018comparing,
+  title={Comparing Bayesian Models of Annotation},
+  author={Paun, Silviu and Carpenter, Bob and Chamberlain, Jon and Hovy, Dirk and Kruschwitz, Udo and Poesio, Massimo},
+  journal={Transactions of the Association for Computational Linguistics},
+  volume={6},
+  pages={571--585},
+  year={2018},
+  publisher={MIT Press}
+}
+
+```
