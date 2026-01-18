@@ -75,7 +75,7 @@ The main input file with the annotations must be a **comma-separated (CSV) file*
 
 ### Example Input (Discrete Labels with 5 Annotators and Empty Line)
 
-```csv
+```
 NOUN,,,NOUN,PRON
 VERB,VERB,,VERB,
 
@@ -86,18 +86,23 @@ NOUN,,,NOUN,PRON
 
 #### Example Input (Continuous Values)
 
-```csv
+```
 3.5,4.2,,,3.8,3.9,4.1
 ,,4.0,4.5,,3.7,3.6,4.3
 4.1,3.9,3.8,4.2,,4.0,,3.7
 ```
 
 ### 2. Label Priors
-The **prior** file is optional, and gives the a-priori prevalence of the individual labels (if we know them). We can supply this to MACE with `--priors <FILE>`. The file needs to list all labels (one per line) and tab-separated the weight, probability, or frequency (MACE automatically normalizes these).
+By default, MACE uses a uniform prior over labels (1/num_labels for each label). The **prior** file is optional, and gives the a-priori prevalence of the individual labels (if we know them). We can supply this to MACE with `--priors <FILE>`. The file needs to list all labels (one per line) and tab-separated the weight, probability, or frequency (MACE automatically normalizes these).
+
+- **Format**: Tab-separated "label\\tweight" pairs, one per line
+- **Normalization**: Weights are automatically normalized to sum to 1.0
+- **Validation**: All labels in the data must be present in the priors file
+- **Usage**: Priors are used in the E-step to compute gold label marginals
 
 #### Example Input (Discrete Labels)
 
-```csv
+```
 NOUN	30
 VERB	30
 ADJ	20
@@ -110,7 +115,7 @@ PRON	10
 If we know the correct answer for some items, we can include **control items** via `--controls <FILE>`. This helps MACE assess annotator reliability in semi-supervised learning. The file with control items needs to have the same number of lines as the input file, with the correct labels specified for the control items.
 
 #### Example Input (Discrete Labels):
-```csv
+```
 PRON
 
 
@@ -127,7 +132,7 @@ If we know *all* answers and only want to get the performance for MACE, we can s
 
 #### Example Input (Discrete Labels)
 
-```csv
+```
 PRON
 VERB
 
@@ -152,7 +157,7 @@ This file has the same number of lines as the input file.
 
 #### Example Output 
 
-```csv
+```
 NOUN
 VERB
 
@@ -165,7 +170,7 @@ If you set --distribution, each line contains the distribution over answer value
 
 #### Example Output
 
-```csv
+```
 NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 6.140428479093134E-5	ADV 6.140428479093134E-5
 VERB 0.9999961943848287	NOUN 9.514037928812883E-7	ADJ 9.514037928812883E-7	PRON 9.514037928812883E-7	ADV 9.514037928812883E-7
 
@@ -185,7 +190,7 @@ NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 
 
 #### Example Output
 
-```csv 
+``` 
 0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738
 ```
 
@@ -202,7 +207,7 @@ This will output a file with the same number of lines as the input file
 
 #### Example Output
 
-```csv
+```
 0.0027237895900081095
 5.657170773284981E-5
 
@@ -358,21 +363,6 @@ Use `--em` flag to switch to regular EM (the old default method).
 - **spamming[a, 1]**: Probability that annotator `a` knows the answer (competence)
 - **thetas[a, l]**: Probability that annotator `a` guesses label `l` when spamming
 
-### Label Priors
-
-By default, MACE uses a uniform prior over labels (1/num_labels for each label). The `--priors` option allows you to specify custom prior probabilities:
-
-- **Format**: Tab-separated "label\\tweight" pairs, one per line
-- **Normalization**: Weights are automatically normalized to sum to 1.0
-- **Validation**: All labels in the data must be present in the priors file
-- **Usage**: Priors are used in the E-step to compute gold label marginals
-
-Example priors file:
-```
-cat	0.5
-dog	0.3
-bird	0.2
-```
 
 ### Continuous Mode
 
