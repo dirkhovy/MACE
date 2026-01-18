@@ -142,8 +142,40 @@ class MACE:
         # Priors
         self.theta_priors = None
         self.strategy_priors = None
+        self.label_priors = None  # Prior probabilities for labels (normalized)
         
         self.log_marginal_likelihood = 0.0
+    
+    def _compute_weighted_stats(self, d):
+        """
+        Compute weighted statistics for continuous mode instance.
+        
+        Args:
+            d (int): Instance index
+        
+        Returns:
+            tuple: (weighted_mean, weighted_std, min_val, max_val, n_annotators)
+                   or None if instance has no annotations
+        """
+        if self.continuous_values[d] is None or len(self.continuous_values[d]) == 0:
+            return None
+        
+        annotators = self.who_labeled[d]
+        values = self.continuous_values[d]
+        competences = self.spamming[annotators, 1]
+        
+        weighted_sum = np.sum(values * competences)
+        total_weight = np.sum(competences)
+        
+        if total_weight > 0:
+            weighted_mean = weighted_sum / total_weight
+            weighted_variance = np.sum(competences * (values - weighted_mean)**2) / total_weight
+            weighted_std = np.sqrt(weighted_variance) if weighted_variance > 0 else 0.0
+        else:
+            weighted_mean = np.mean(values)
+            weighted_std = np.std(values)
+        
+        return (weighted_mean, weighted_std, np.min(values), np.max(values), len(values))
     
     def initialize(self, init_noise, alpha=None, beta=None):
         """
@@ -157,13 +189,13 @@ class MACE:
             init_noise (float): Amount of random noise to add (typically 0.5).
                               Higher values create more diverse initializations.
             alpha (float, optional): First hyperparameter for beta prior on knowing
-                                    probability. If provided, enables variational inference.
+                                    probability. Used for variational inference (default mode).
             beta (float, optional): Second hyperparameter for beta prior on knowing
-                                   probability. If provided, enables variational inference.
+                                   probability. Used for variational inference (default mode).
         
         Note:
-            Both alpha and beta must be provided together to enable variational mode.
-            Otherwise, standard maximum likelihood estimation is used.
+            Variational inference (with alpha and beta) is the default mode.
+            If both alpha and beta are None, standard maximum likelihood estimation is used.
         """
         # Vectorized initialization with random noise
         self.spamming = 1.0 + init_noise * np.random.random((self.num_annotators, 2))
@@ -207,7 +239,9 @@ class MACE:
         # Compute marginals
         self.log_marginal_likelihood = 0.0
         has_controls = controls is not None and len(controls) > 0
-        num_labels = self.num_labels
+        # Cache label priors check and uniform prior
+        use_label_priors = self.label_priors is not None
+        uniform_prior = 1.0 / self.num_labels
         
         for d in range(self.num_instances):
             labels_d = self.labels[d]
@@ -221,8 +255,9 @@ class MACE:
             control_label = controls[d] if d_in_controls else -1
             
             # Compute gold label marginals for each possible label
-            for l in range(num_labels):
-                gold_label_marginal = 1.0 / num_labels
+            for l in range(self.num_labels):
+                # Use label priors if available, otherwise uniform prior
+                gold_label_marginal = self.label_priors[l] if use_label_priors else uniform_prior
                 
                 for ai in range(num_annotators_d):
                     a = who_labeled_d[ai]
@@ -253,35 +288,35 @@ class MACE:
                 spamming_a1 = self.spamming[a, 1]
                 theta_a_label = self.thetas[a, label_ai]
                 
+                # Cache frequently used computations
+                base_prob = spamming_a0 * theta_a_label
+                denom_knowing = base_prob + spamming_a1
+                
                 if d_in_controls:
                     if label_ai == control_label:
                         l = control_label
-                        denom = spamming_a0 * theta_a_label + spamming_a1
-                        strategy_marginal = self.gold_label_marginals[d, l] / denom
-                        strategy_marginal *= spamming_a0 * theta_a_label
+                        strategy_marginal = self.gold_label_marginals[d, l] / denom_knowing
+                        strategy_marginal *= base_prob
                         norm_strategy = strategy_marginal * inv_instance_marginal
                         self.strategy_expected_counts[a, label_ai] += norm_strategy
                         self.knowing_expected_counts[a, 0] += norm_strategy
                         self.knowing_expected_counts[a, 1] += (
-                            self.gold_label_marginals[d, label_ai] * spamming_a1 / 
-                            (spamming_a0 * theta_a_label + spamming_a1)
+                            self.gold_label_marginals[d, label_ai] * spamming_a1 / denom_knowing
                         ) * inv_instance_marginal
                     else:
                         self.strategy_expected_counts[a, label_ai] += 1.0
                         self.knowing_expected_counts[a, 0] += 1.0
                 else:
                     strategy_marginal = 0.0
-                    base_denom = spamming_a0 * theta_a_label
-                    for l in range(num_labels):
-                        denom = base_denom + (spamming_a1 if l == label_ai else 0.0)
+                    for l in range(self.num_labels):
+                        denom = base_prob + (spamming_a1 if l == label_ai else 0.0)
                         strategy_marginal += self.gold_label_marginals[d, l] / denom
-                    strategy_marginal *= spamming_a0 * theta_a_label
+                    strategy_marginal *= base_prob
                     norm_strategy = strategy_marginal * inv_instance_marginal
                     self.strategy_expected_counts[a, label_ai] += norm_strategy
                     self.knowing_expected_counts[a, 0] += norm_strategy
                     self.knowing_expected_counts[a, 1] += (
-                        self.gold_label_marginals[d, label_ai] * spamming_a1 / 
-                        (spamming_a0 * theta_a_label + spamming_a1)
+                        self.gold_label_marginals[d, label_ai] * spamming_a1 / denom_knowing
                     ) * inv_instance_marginal
     
     def m_step(self, smoothing):
@@ -354,31 +389,23 @@ class MACE:
             >>> # predictions[0] = "cat" (most likely label for instance 0)
         """
         entropies = self.get_label_entropies()
-        entropy_threshold = self.get_entropy_for_threshold(threshold)
+        entropy_threshold = self.get_entropy_for_threshold(threshold, entropies)
         
         result = [""] * self.num_instances
+        # Pre-compute valid mask for efficiency
+        valid_mask = (entropies <= entropy_threshold) & (entropies != float('-inf'))
         
         if self.continuous:
             # For continuous mode: compute weighted average
             for d in range(self.num_instances):
-                if entropies[d] <= entropy_threshold and entropies[d] != float('-inf'):
-                    if self.continuous_values[d] is not None and len(self.continuous_values[d]) > 0:
-                        # Get annotators and their values for this instance
-                        annotators = self.who_labeled[d]
-                        values = self.continuous_values[d]
-                        # Get competence scores (spamming[a, 1] = probability of knowing)
-                        competences = self.spamming[annotators, 1]
-                        # Compute weighted average
-                        weighted_sum = np.sum(values * competences)
-                        total_weight = np.sum(competences)
-                        if total_weight > 0:
-                            result[d] = str(weighted_sum / total_weight)
-                        else:
-                            result[d] = str(np.mean(values))  # Fallback to simple mean
+                if valid_mask[d]:
+                    stats = self._compute_weighted_stats(d)
+                    if stats is not None:
+                        result[d] = str(stats[0])  # weighted_mean
         else:
             # Discrete mode: original behavior
             for d in range(self.num_instances):
-                if entropies[d] <= entropy_threshold and entropies[d] != float('-inf'):
+                if valid_mask[d]:
                     best_label = np.argmax(self.gold_label_marginals[d])
                     result[d] = self.int2string[best_label]
         
@@ -406,37 +433,24 @@ class MACE:
             >>> # dists[0] = "cat 0.8\tdog 0.15\tbird 0.05"
         """
         entropies = self.get_label_entropies()
-        entropy_threshold = self.get_entropy_for_threshold(threshold)
+        entropy_threshold = self.get_entropy_for_threshold(threshold, entropies)
         
         result = [""] * self.num_instances
+        # Pre-compute valid mask for efficiency
+        valid_mask = (entropies <= entropy_threshold) & (entropies != float('-inf'))
         
         if self.continuous:
             # For continuous mode: return weighted mean, std, and individual values with weights
             for d in range(self.num_instances):
-                if entropies[d] <= entropy_threshold and entropies[d] != float('-inf'):
-                    if self.continuous_values[d] is not None and len(self.continuous_values[d]) > 0:
-                        annotators = self.who_labeled[d]
-                        values = self.continuous_values[d]
-                        competences = self.spamming[annotators, 1]
-                        
-                        # Weighted mean
-                        weighted_sum = np.sum(values * competences)
-                        total_weight = np.sum(competences)
-                        if total_weight > 0:
-                            weighted_mean = weighted_sum / total_weight
-                            # Weighted variance
-                            weighted_variance = np.sum(competences * (values - weighted_mean)**2) / total_weight
-                            weighted_std = np.sqrt(weighted_variance) if weighted_variance > 0 else 0.0
-                        else:
-                            weighted_mean = np.mean(values)
-                            weighted_std = np.std(values)
-                        
+                if valid_mask[d]:
+                    stats = self._compute_weighted_stats(d)
+                    if stats is not None:
                         # Format: mean, std, min, max, n_annotators
-                        result[d] = f"{weighted_mean}\t{weighted_std}\t{np.min(values)}\t{np.max(values)}\t{len(values)}"
+                        result[d] = f"{stats[0]}\t{stats[1]}\t{stats[2]}\t{stats[3]}\t{stats[4]}"
         else:
             # Discrete mode: original behavior
             for d in range(self.num_instances):
-                if entropies[d] <= entropy_threshold and entropies[d] != float('-inf'):
+                if valid_mask[d]:
                     marginals = self.gold_label_marginals[d]
                     # Sort indices by value descending
                     sorted_indices = np.argsort(marginals)[::-1]
@@ -476,7 +490,7 @@ class MACE:
         
         return result
     
-    def run(self, num_iters, smoothing, num_restarts, alpha, beta, variational, controls_file):
+    def run(self, num_iters, smoothing, num_restarts, alpha, beta, use_em, controls_file):
         """
         Run the EM algorithm to learn annotator competences and true labels.
         
@@ -490,9 +504,9 @@ class MACE:
             num_iters (int): Number of EM iterations per restart (typically 50)
             smoothing (float): Smoothing parameter for M-step (typically 0.01/num_labels)
             num_restarts (int): Number of random restarts (typically 10)
-            alpha (float): First hyperparameter for beta prior (variational mode)
-            beta (float): Second hyperparameter for beta prior (variational mode)
-            variational (bool): If True, use variational inference instead of MLE
+            alpha (float): First hyperparameter for beta prior (used in Variational Bayes EM, default)
+            beta (float): Second hyperparameter for beta prior (used in Variational Bayes EM, default)
+            use_em (bool): If True, use regular EM (MLE). If False, use Variational Bayes EM (default)
             controls_file (str, optional): Path to file with control items (known labels)
         
         Updates:
@@ -515,8 +529,11 @@ class MACE:
         print("Running training with the following settings:", file=sys.stderr)
         print(f"\t{num_iters} iterations", file=sys.stderr)
         print(f"\t{num_restarts} restarts", file=sys.stderr)
-        print(f"\tsmoothing = {smoothing}", file=sys.stderr)
-        if variational:
+        if use_em:
+            print(f"\tMethod: EM (Maximum Likelihood)", file=sys.stderr)
+            print(f"\tsmoothing = {smoothing}", file=sys.stderr)
+        else:
+            print(f"\tMethod: Variational Bayes EM", file=sys.stderr)
             print(f"\talpha = {alpha}", file=sys.stderr)
             print(f"\tbeta = {beta}", file=sys.stderr)
         
@@ -525,10 +542,10 @@ class MACE:
             print(f"\n============\nRestart {rr + 1}\n============", file=sys.stderr)
             
             # Initialize
-            if variational:
-                self.initialize(DEFAULT_NOISE, alpha, beta)
-            else:
+            if use_em:
                 self.initialize(DEFAULT_NOISE)
+            else:
+                self.initialize(DEFAULT_NOISE, alpha, beta)
             
             # Run first E-Step to get counts
             self.e_step(controls)
@@ -536,10 +553,10 @@ class MACE:
             
             # Iterate
             for _ in range(num_iters):
-                if variational:
-                    self.variational_m_step()
-                else:
+                if use_em:
                     self.m_step(smoothing)
+                else:
+                    self.variational_m_step()
                 self.e_step(controls)
             
             print(f"final log marginal likelihood = {self.log_marginal_likelihood}", file=sys.stderr)
@@ -599,6 +616,75 @@ class MACE:
         
         except Exception as e:
             raise IOError(f"Problem reading file: {str(e)}")
+    
+    def _read_label_priors(self, file_name):
+        """
+        Read label priors from file.
+        
+        Reads a file with tab-separated label and weight pairs, one per line.
+        Validates that all labels in the data are present, normalizes weights,
+        and stores as prior probabilities for labels.
+        
+        Args:
+            file_name (str): Path to file with label priors. Format: "label\\tweight"
+        
+        Raises:
+            IOError: If file cannot be read
+            IOError: If not all labels are present in priors file
+            IOError: If weights cannot be parsed as floats
+        
+        Updates:
+            - label_priors: Normalized prior probabilities for each label
+        """
+        label_weights = {}
+        
+        try:
+            with open(file_name, 'r', encoding='utf-8') as f:
+                print(f"Reading label priors file {file_name}", file=sys.stderr)
+                
+                for line_number, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    parts = line.split('\t')
+                    if len(parts) != 2:
+                        raise IOError(f"Line {line_number} in priors file must have exactly 2 tab-separated values (label\\tweight)")
+                    
+                    label = parts[0].strip()
+                    try:
+                        weight = float(parts[1].strip())
+                        if weight < 0:
+                            raise IOError(f"Line {line_number} in priors file: weight must be non-negative")
+                        label_weights[label] = weight
+                    except ValueError:
+                        raise IOError(f"Line {line_number} in priors file: weight '{parts[1]}' is not a valid number")
+            
+            # Validate that all labels are present
+            missing_labels = set(self.int2string) - set(label_weights.keys())
+            if missing_labels:
+                raise IOError(f"Priors file missing labels: {sorted(missing_labels)}. All labels in data must be present.")
+            
+            # Check for extra labels (warn but don't error)
+            extra_labels = set(label_weights.keys()) - set(self.int2string)
+            if extra_labels:
+                print(f"Warning: Priors file contains extra labels not in data: {sorted(extra_labels)}", file=sys.stderr)
+            
+            # Normalize weights to probabilities
+            self.label_priors = np.array([label_weights.get(label, 0.0) for label in self.int2string])
+            total_weight = self.label_priors.sum()
+            
+            if total_weight > 0:
+                self.label_priors /= total_weight
+            else:
+                # If all weights are zero, use uniform prior
+                print("Warning: All priors are zero, using uniform prior", file=sys.stderr)
+                self.label_priors.fill(1.0 / self.num_labels)
+            
+            print(f"Label priors loaded and normalized: {dict(zip(self.int2string, self.label_priors))}", file=sys.stderr)
+        
+        except Exception as e:
+            raise IOError(f"Problem reading priors file: {str(e)}")
     
     def _read_file_data(self, file_name):
         """
@@ -741,7 +827,7 @@ class MACE:
         except Exception as e:
             raise IOError(f"Problem writing file: {str(e)}")
     
-    def get_entropy_for_threshold(self, threshold):
+    def get_entropy_for_threshold(self, threshold, entropy_array=None):
         """
         Get entropy value corresponding to threshold percentile.
         
@@ -753,6 +839,8 @@ class MACE:
             threshold (float): Percentile threshold (0.0-1.0).
                              0.0 = minimum entropy (most certain)
                              1.0 = maximum entropy (all instances)
+            entropy_array (np.ndarray, optional): Precomputed entropy array.
+                                                 If None, computes it.
         
         Returns:
             float: Entropy value at the specified percentile
@@ -768,7 +856,8 @@ class MACE:
         else:
             pivot = int(self.num_instances * threshold)
         
-        entropy_array = self.get_label_entropies()
+        if entropy_array is None:
+            entropy_array = self.get_label_entropies()
         return np.partition(entropy_array, pivot)[pivot]
     
     def test(self, test_file, predictions, distribution_format=False):
@@ -830,7 +919,7 @@ class MACE:
                     coverage = total / self.num_instances
                     print(f"Coverage: {coverage}\t", end="")
                     
-                    if total > 0 and len(squared_errors) > 0:
+                    if total > 0:
                         mse = np.mean(squared_errors)
                         rmse = np.sqrt(mse)
                         return rmse
@@ -928,23 +1017,27 @@ This is research software that is not actively maintained.
     )
     
     parser.add_argument('--version', action='version', version=f'MACE {VERSION}')
-    parser.add_argument('--controls', type=str, metavar='FILE',
-                       help='File with control items (known ground truth labels) for semi-supervised learning. '
-                            'One label per line, empty lines indicate no control. Must match number of instances.')
+    # Arguments sorted alphabetically (excluding --version and csv_file)
     parser.add_argument('--alpha', type=float, default=DEFAULT_ALPHA, metavar='FLOAT',
-                       help=f'First hyperparameter of beta prior for variational inference. '
-                            f'Enables variational mode when set. Default: {DEFAULT_ALPHA}')
+                       help=f'First hyperparameter of beta prior for Variational Bayes EM (default method). '
+                            f'Default: {DEFAULT_ALPHA}')
     parser.add_argument('--beta', type=float, default=DEFAULT_BETA, metavar='FLOAT',
-                       help=f'Second hyperparameter of beta prior for variational inference. '
-                            f'Enables variational mode when set. Default: {DEFAULT_BETA}')
+                       help=f'Second hyperparameter of beta prior for Variational Bayes EM (default method). '
+                            f'Default: {DEFAULT_BETA}')
     parser.add_argument('--continuous', action='store_true',
                        help='Interpret input values as continuous numeric. Returns weighted averages '
                             'weighted by annotator competence scores. All values must be valid numbers. '
                             'Test evaluation uses RMSE instead of accuracy.')
+    parser.add_argument('--controls', type=str, metavar='FILE',
+                       help='File with control items (known ground truth labels) for semi-supervised learning. '
+                            'One label per line, empty lines indicate no control. Must match number of instances.')
     parser.add_argument('--distribution', action='store_true',
                        help='Output full probability distributions instead of single predictions. '
                             'Discrete: tab-separated "label probability" pairs sorted by probability. '
                             'Continuous: tab-separated stats "mean\\tstd\\tmin\\tmax\\tn_annotators".')
+    parser.add_argument('--em', action='store_true',
+                       help='Use regular EM (Maximum Likelihood Estimation) instead of Variational Bayes EM. '
+                            'Variational Bayes EM is the default method.')
     parser.add_argument('--entropies', action='store_true',
                        help='Write entropy values (uncertainty measure) for each instance to a separate file. '
                             'Higher entropy indicates more disagreement among annotators.')
@@ -956,11 +1049,15 @@ This is research software that is not actively maintained.
     parser.add_argument('--prefix', type=str, metavar='PREFIX',
                        help='Prefix for output filenames. If not specified, uses default names '
                             '(prediction, competence, entropies). Output: {prefix}.prediction, etc.')
+    parser.add_argument('--priors', type=str, metavar='FILE',
+                       help='File with label priors (one tab-separated "label\\tweight" pair per line). '
+                            'All labels in data must be present. Weights are automatically normalized to probabilities. '
+                            'Used as prior likelihoods for labels in the E-step.')
     parser.add_argument('--restarts', type=int, default=DEFAULT_RR, metavar='N',
                        help=f'Number of random restarts to perform. Multiple restarts help avoid '
                             f'local optima. Best model (highest likelihood) is selected. Default: {DEFAULT_RR}')
     parser.add_argument('--smoothing', type=float, metavar='FLOAT',
-                       help='Smoothing parameter added to expected counts before normalization. '
+                       help='Smoothing parameter added to expected counts before normalization (regular EM only). '
                             'Prevents zero probabilities. If not specified, defaults to 0.01/num_labels. '
                             'Higher values = more conservative updates.')
     parser.add_argument('--test', type=str, metavar='FILE',
@@ -978,8 +1075,12 @@ This is research software that is not actively maintained.
     try:
         em = MACE(args.csv_file, continuous=args.continuous)
         
+        # Read label priors if provided
+        if args.priors:
+            em._read_label_priors(args.priors)
+        
         smoothing = args.smoothing if args.smoothing is not None else 0.01 / em.num_labels
-        variational = args.alpha != DEFAULT_ALPHA or args.beta != DEFAULT_BETA
+        use_em = args.em  # If --em flag is set, use regular EM, otherwise use Variational Bayes EM (default)
         
         # Validate arguments
         if smoothing < 0.0:
@@ -992,7 +1093,7 @@ This is research software that is not actively maintained.
             raise ValueError("iterations not between 1 and 1000")
         
         # Run with configuration
-        em.run(args.iterations, smoothing, args.restarts, args.alpha, args.beta, variational, args.controls)
+        em.run(args.iterations, smoothing, args.restarts, args.alpha, args.beta, use_em, args.controls)
         
         # Write results to files
         predictions = em.decode_distribution(args.threshold) if args.distribution else em.decode(args.threshold)
