@@ -1,11 +1,11 @@
 # MACE: Multi-Annotator Competence Estimation
 
-Ask 5 people to label or rate something, and you likely get several different answers. But for ML (and lots of other applications), you still need a single aggregated answer. Majority vote is easy… but often wrong. However, disagreement isn’t noise—it’s information. It can mean the item is genuinely hard — or that someone wasn’t paying attention. 
+Ask 5 people to label or rate something, and you likely get several different answers. But for ML (and lots of other applications), you usually need a single aggregated answer. Using the majority vote is easy… but often wrong. However, disagreement isn’t noise–it’s information. It can mean the item is genuinely hard, or that someone wasn’t paying attention. 
 
-MACE is an Expectation-Maximization (EM)-based algorithm with variational inference with Bayesian priors that simultaneously:
-- Learns the most likely aggregate labels for items from multiple annotators
-- Estimates the competence (reliability) of each annotator
-- Models how difficult each item is
+MACE is an Expectation-Maximization (EM)-based algorithm that uses variational inference with Bayesian priors to simultaneously:
+- Learn the most likely aggregate labels for items from multiple annotators
+- Estimate the competence (reliability) of each annotator
+- Model how difficult each item is
 
 It models annotators as either "knowing" the correct answer or "guessing" according to some strategy. 
 
@@ -374,8 +374,7 @@ In continuous mode, MACE:
 ## Citation
 
 If you use MACE in your research, please cite:
-* *Hovy, D., Berg-Kirkpatrick, T., Vaswani, A., & Hovy, E.* (2013). **Learning Whom to Trust With MACE.**  In: Proceedings of NAACL-HLT. Association for Computational Linguistics. [[PDF]](https://aclanthology.org/N13-1132.pdf)
-```
+* *Dirk Hovy, Taylor Berg-Kirkpatrick, Ashish Vaswani, and Eduard Hovy.* (2013). **Learning Whom to Trust With MACE.**  In: Proceedings of NAACL-HLT. Association for Computational Linguistics. [[PDF]](https://aclanthology.org/N13-1132.pdf)
 
 ```bib
 @inproceedings{hovy-etal-2013-learning,
@@ -397,8 +396,8 @@ If you use MACE in your research, please cite:
 }
 ```
 
-There is an additional paper that compares MACE with some other models:
-* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL). [[PDF]](https://aclanthology.org/Q18-1040.pdf)
+An additional paper compares MACE with some other annotation models:
+* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio.* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL). [[PDF]](https://aclanthology.org/Q18-1040.pdf)
 
 ```bib
 @article{paun-etal-2018-comparing,
