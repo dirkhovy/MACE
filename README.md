@@ -374,12 +374,7 @@ In continuous mode, MACE:
 ## Citation
 
 If you use MACE in your research, please cite:
-
-```
-Hovy, D., Berg-Kirkpatrick, T., Vaswani, A., & Hovy, E. (2013). 
-Learning Whom to Trust With MACE. 
-In: Proceedings of NAACL-HLT. 
-Association for Computational Linguistics.
+* *Hovy, D., Berg-Kirkpatrick, T., Vaswani, A., & Hovy, E.* (2013). **Learning Whom to Trust With MACE.**  In: Proceedings of NAACL-HLT. Association for Computational Linguistics. [[PDF]](https://aclanthology.org/N13-1132.pdf)
 ```
 
 ```bib
@@ -403,7 +398,7 @@ Association for Computational Linguistics.
 ```
 
 There is an additional paper that compares MACE with some other models:
-* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL). [[PDF]](http://www.dirkhovy.com/portfolio/papers/download/bma_draft.pdf)
+* *Silviu Paun, Bob Carpenter, Jon Chamberlain, Dirk Hovy, Udo Kruschwitz, and Massimo Poesio* (2018): **Comparing Bayesian Models of Annotation**. In: Transactions of the Association for Computational Linguistics (TACL). [[PDF]](https://aclanthology.org/Q18-1040.pdf)
 
 ```bib
 @article{paun-etal-2018-comparing,
