@@ -448,13 +448,20 @@ class MACE:
                         # Format: mean, std, min, max, n_annotators
                         result[d] = f"{stats[0]}\t{stats[1]}\t{stats[2]}\t{stats[3]}\t{stats[4]}"
         else:
-            # Discrete mode: original behavior
+            # Discrete mode: normalize marginals to probability distribution
             for d in range(self.num_instances):
                 if valid_mask[d]:
                     marginals = self.gold_label_marginals[d]
-                    # Sort indices by value descending
-                    sorted_indices = np.argsort(marginals)[::-1]
-                    output = [f"{self.int2string[i]} {marginals[i]}" for i in sorted_indices]
+                    # Normalize to probability distribution (sum to 1.0)
+                    norm = marginals.sum()
+                    if norm > 0:
+                        probabilities = marginals / norm
+                    else:
+                        # If all marginals are zero, use uniform distribution
+                        probabilities = np.ones(self.num_labels) / self.num_labels
+                    # Sort indices by probability descending
+                    sorted_indices = np.argsort(probabilities)[::-1]
+                    output = [f"{self.int2string[i]} {probabilities[i]}" for i in sorted_indices]
                     result[d] = "\t".join(output)
         
         return result
@@ -1133,7 +1140,10 @@ This is research software that is not actively maintained.
         
         # Generate entropies
         if args.entropies:
-            entropy = em.get_label_entropies().tolist()
+            entropy_array = em.get_label_entropies()
+            # Filter out empty lines (instances with no annotations)
+            entropy = [str(entropy_array[d]) if entropy_array[d] != float('-inf') else "" 
+                      for d in range(em.num_instances)]
             entropy_name = f"{prefix}.entropies" if prefix else "entropies"
             
             # Generate header for entropy file
