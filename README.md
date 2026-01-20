@@ -46,8 +46,8 @@ python3 mace.py [options] <CSV input file>
 |--------|-------------|
 | `--help` | Display help information |
 | `--version` | Display version information |
-| `--alpha <FLOAT>` | First hyperparameter of beta prior for Variational Bayes EM (default method). Default: 0.5 |
-| `--beta <FLOAT>` | Second hyperparameter of beta prior for Variational Bayes EM (default method). Default: 0.5 |
+| `--alpha <FLOAT>` | First hyperparameter of beta prior for Variational Bayes EM (default method). alpha > beta means we assume most annotators are unreliable. Default: 0.5 |
+| `--beta <FLOAT>` | Second hyperparameter of beta prior for Variational Bayes EM (default method). beta > alpha means we assume most annotators are reliable. Default: 0.5 |
 | `--continuous` | Interpret data values as continuous numeric (returns weighted averages weighted by competence) |
 | `--controls <FILE>` | File with control items (i.e., known ground truth labels) for semi-supervised learning. Each line corresponds to one item, so the number of lines MUST match the input CSV file. Control items usually improve accuracy. |
 | `--distribution` | Output full probability distributions instead of single predictions in '[prefix.]prediction' |
@@ -359,15 +359,15 @@ Use `--em` flag to switch to regular EM (the old default method).
 
 ### Model Parameters
 
-- **spamming[a, 0]**: Probability that annotator `a` is guessing
-- **spamming[a, 1]**: Probability that annotator `a` knows the answer (competence)
+- **spamming[a, 0]**: Probability that annotator `a` is guessing. Informed by alpha
+- **spamming[a, 1]**: Probability that annotator `a` knows the answer. Informed by beta
 - **thetas[a, l]**: Probability that annotator `a` guesses label `l` when spamming
 
 
 ### Continuous Mode
 
 In continuous mode, MACE:
-1. Still runs EM to estimate annotator competence
+1. Still runs Variational Bayes EM to estimate annotator competence
 2. Returns weighted averages: `Σ(value_i × competence_i) / Σ(competence_i)`
 3. Uses RMSE for evaluation instead of accuracy
 

@@ -1026,10 +1026,10 @@ This is research software that is not actively maintained.
     parser.add_argument('--version', action='version', version=f'MACE {VERSION}')
     # Arguments sorted alphabetically (excluding --version and csv_file)
     parser.add_argument('--alpha', type=float, default=DEFAULT_ALPHA, metavar='FLOAT',
-                       help=f'First hyperparameter of beta prior for Variational Bayes EM (default method). '
+                       help=f'First hyperparameter of beta prior for Variational Bayes EM (default method). If alpha > beta, then we assume most annotators are unreliable. '
                             f'Default: {DEFAULT_ALPHA}')
     parser.add_argument('--beta', type=float, default=DEFAULT_BETA, metavar='FLOAT',
-                       help=f'Second hyperparameter of beta prior for Variational Bayes EM (default method). '
+                       help=f'Second hyperparameter of beta prior for Variational Bayes EM (default method). If beta > alpha, then we assume most annotators are reliable. '
                             f'Default: {DEFAULT_BETA}')
     parser.add_argument('--continuous', action='store_true',
                        help='Interpret input values as continuous numeric. Returns weighted averages '
