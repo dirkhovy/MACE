@@ -267,8 +267,8 @@ python3 mace.py --continuous --test data/examples/example.key data/examples/exam
 # Get full probability distributions for each instance
 python3 mace.py --distribution data/examples/example.csv
 
-# Discrete: "cat 0.8\tdog 0.15\tbird 0.05"
-# Continuous: "3.5\t0.2\t2.0\t5.0\t3" (mean, std, min, max, n_annotators)
+# Discrete: "3 0.9992656061207903	0 0.00032738278917563427	2 0.00020579145942908883	1 0.00020121963060488852"
+# Continuous: "2.7333598926512326	0.8278241191907356	0.0	3.0	10" (mean, std, min, max, n_annotators)
 ```
 
 ### With Control Items (Semi-Supervised)
@@ -296,14 +296,13 @@ python3 mace.py --em data/examples/example.csv
 
 ```bash
 # Use label priors file (priors.txt format: "label\tweight" one per line)
-python3 mace.py --priors data/examples/pos.weights data/examples/pos.csv
-
-# Example priors.txt:
+# Example pos.weights:
 # NOUN	30
 # VERB	30
 # ADJ	20
 # ADV	10
 # PRON	10
+python3 mace.py --priors data/examples/pos.weights data/examples/pos.csv
 ```
 
 ### Complete Example
