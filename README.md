@@ -1,13 +1,13 @@
 # MACE: Multi-Annotator Competence Estimation
 
-Ask 5 people to label or rate something, and you likely get several different answers. But for ML (and lots of other applications), you usually need a single aggregated answer. Using the majority vote is easy… but often wrong. However, disagreement isn’t noise–it’s information. It can mean the item is genuinely hard, or that someone wasn’t paying attention. 
+Ask 5 people to label or rate something, and you likely get several different answers. But for ML (and lots of other applications), you usually need a single aggregated answer. Using the majority vote is easy… but often wrong. However, disagreement isn’t noise–it’s information. It can mean the item is genuinely hard, or that someone wasn’t paying attention.
 
 MACE is an Expectation-Maximization (EM)-based algorithm that uses variational inference with Bayesian priors to simultaneously:
 - Learn the most likely aggregate labels for items from multiple annotators
 - Estimate the competence (reliability) of each annotator
 - Model how difficult each item is
 
-It models annotators as either "knowing" the correct answer or "guessing" according to some strategy. 
+It models annotators as either "knowing" the correct answer or "guessing" according to some strategy.
 
 ## Features
 
@@ -121,7 +121,6 @@ PRON
 
 
 
-
 NOUN
 ```
 
@@ -153,9 +152,9 @@ MACE generates the following output files:
 - **Distribution mode**: Tab-separated distributions (see `--distribution` option)
 - Empty lines indicate instances filtered by threshold or with no input annotations
 
-This file has the same number of lines as the input file. 
+This file has the same number of lines as the input file.
 
-#### Example Output 
+#### Example Output
 
 ```
 NOUN
@@ -166,7 +165,7 @@ VERB
 NOUN
 ```
 
-If you set --distribution, each line contains the distribution over answer values, sorted by entropy. 
+If you set --distribution, each line contains the distribution over answer values, sorted by entropy.
 
 #### Example Output
 
@@ -190,7 +189,7 @@ NOUN 0.9997443833265887	PRON 7.140381903855615E-5	ADJ 6.140428479093134E-5	VERB 
 
 #### Example Output
 
-``` 
+```
 0.8820970950608722  0.7904155783217401		0.6598575839917008 0.8822161621354134	 0.03114062354821738
 ```
 
@@ -224,29 +223,30 @@ Here, the first line after the break is the most difficult.
 
 ```bash
 # Evaluate annotations and write output to "prediction" and "competence"
-python3 mace.py example.csv
+python3 mace.py data/examples/example.csv
 ```
 
 ### With Custom Prefix
 
 ```bash
 # Write output to "out.prediction" and "out.competence"
-python3 mace.py --prefix out example.csv
+python3 mace.py --prefix out data/examples/example.csv
 ```
 
 ### Test Evaluation
 
 ```bash
 # Evaluate against gold standard and print accuracy
-python3 mace.py --test example.key example.csv
-# Output: Accuracy on test set: 0.85
+python3 mace.py --test data/examples/example.key data/examples/example.csv
+# Output: Coverage: 1.0  Accuracy on test set: 0.81
 ```
 
 ### Filter Uncertain Instances
 
 ```bash
 # Only predict for top 90% most confident instances
-python3 mace.py --threshold 0.9 example.csv
+python3 mace.py --threshold 0.9 data/examples/example.csv
+# Output: Coverage: 0.91  Accuracy on test set: 0.8571428571428571
 # Improves accuracy at the expense of coverage
 ```
 
@@ -254,18 +254,18 @@ python3 mace.py --threshold 0.9 example.csv
 
 ```bash
 # Process numeric scores, return weighted averages
-python3 mace.py --continuous scores.csv
+python3 mace.py --continuous data/examples/example.csv
 
 # With test evaluation (uses RMSE instead of accuracy)
-python3 mace.py --continuous --test gold_standard.txt scores.csv
-# Output: RMSE on test set: 2.345
+python3 mace.py --continuous --test data/examples/example.key data/examples/example.csv
+# Output: RMSE on test set: 0.7520364577656833
 ```
 
 ### Distribution Output
 
 ```bash
 # Get full probability distributions for each instance
-python3 mace.py --distribution example.csv
+python3 mace.py --distribution data/examples/example.csv
 
 # Discrete: "cat 0.8\tdog 0.15\tbird 0.05"
 # Continuous: "3.5\t0.2\t2.0\t5.0\t3" (mean, std, min, max, n_annotators)
@@ -274,34 +274,36 @@ python3 mace.py --distribution example.csv
 ### With Control Items (Semi-Supervised)
 
 ```bash
-# Use known labels to guide learning
-python3 mace.py --controls known_labels.txt example.csv
+# Use known labels for some instances to guide learning
+python3 mace.py --controls data/examples/pos.controls data/examples/pos.csv
 ```
 
 ### Output With Headers
 
 ```bash
 # Add descriptive headers to output files
-python3 mace.py --headers --prefix results example.csv
+python3 mace.py --headers --prefix results data/examples/example.csv
 ```
 
 ### Regular EM (Maximum Likelihood)
 
 ```bash
 # Use regular EM instead of Variational Bayes EM (old default behavior)
-python3 mace.py --em example.csv
+python3 mace.py --em data/examples/example.csv
 ```
 
 ### With Label Priors
 
 ```bash
 # Use label priors file (priors.txt format: "label\tweight" one per line)
-python3 mace.py --priors priors.txt example.csv
+python3 mace.py --priors data/examples/pos.weights data/examples/pos.csv
 
 # Example priors.txt:
-# cat	0.5
-# dog	0.3
-# bird	0.2
+# NOUN	30
+# VERB	30
+# ADJ	20
+# ADV	10
+# PRON	10
 ```
 
 ### Complete Example
@@ -313,13 +315,13 @@ python3 mace.py \
     --distribution \
     --headers \
     --entropies \
-    --test gold_standard.txt \
-    --controls known_labels.txt \
+    --test data/examples/pos.key \
+    --controls data/examples/pos.controls \
     --prefix results \
     --threshold 0.8 \
     --iterations 100 \
     --restarts 20 \
-    scores.csv
+    data/examples/pos.csv
 ```
 
 ## Understanding the Output
@@ -427,7 +429,7 @@ An additional paper compares MACE with some other annotation models:
 
 ## Version
 
-Current version: **0.3**
+Current version: **0.5**
 
 Python port of the Java implementation, modified to work with Python 3.12+.
 

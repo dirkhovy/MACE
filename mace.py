@@ -46,7 +46,7 @@ import time
 import numpy as np
 from scipy.special import digamma
 
-VERSION = "0.3"
+VERSION = "0.5"
 
 # Defaults
 DEFAULT_RR = 10
