@@ -7,7 +7,8 @@ MACE is an Expectation-Maximization (EM)-based algorithm that uses variational i
 - Estimate the competence (reliability) of each annotator
 - Model how difficult each item is
 
-It models annotators as either "knowing" the correct answer or "guessing" according to some strategy.
+It models annotators as either "knowing" the correct answer or "guessing" according to some strategy. Thats assumes there is one correct answer.
+In pluralistic cases, where several answers can be correct, try setting beta > alpha and output distributions.
 
 ## Features
 
