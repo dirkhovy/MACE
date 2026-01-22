@@ -23,7 +23,7 @@ In pluralistic cases, where several answers can be correct, try setting beta > a
 
 ### Requirements
 
-- Python 3.6 or higher
+- Python 3.14 or higher
 - NumPy
 - SciPy
 
@@ -431,7 +431,7 @@ An additional paper compares MACE with some other annotation models:
 
 Current version: **0.5**
 
-Python port of the Java implementation, modified to work with Python 3.12+.
+Python port of the Java implementation, modified to work with Python 3.14+.
 
 ## License
 

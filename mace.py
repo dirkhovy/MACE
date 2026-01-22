@@ -33,7 +33,7 @@ Current Version: Natural Language Group, April 2013
 Copyright (c) 2013 by the University of Southern California
 All rights reserved.
 
-Python port of the Java implementation via Cursor, modified to work with Python 3.12, 16 Jan 2026.
+Python port of the Java implementation via Cursor, modified to work with Python 3.14, 16 Jan 2026.
 
 Reference:
     Hovy, D., Berg-Kirkpatrick, T., Vaswani, A., & Hovy, E. (2013).
